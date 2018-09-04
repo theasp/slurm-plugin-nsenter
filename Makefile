@@ -1,6 +1,6 @@
 PACKAGE    ?= slurm-plugin-setns
 
-sysconfdir ?= /etc/slurm-llnl/
+sysconfdir ?= /etc/slurm-llnl
 
 LIBNAME    ?= lib$(shell uname -m | grep -q x86_64 && echo 64)
 # TODO: Don't hardcode libdir
@@ -9,13 +9,14 @@ BINDIR     ?= /usr/bin
 SBINDIR    ?= /sbin
 LIBEXECDIR ?= /usr/libexec
 PLUGINDIR  ?= $(LIBDIR)/slurm-wlm
+PLUGSTACKDIR ?= $(sysconfdir)/plugstack.d
 
 export LIBNAME LIBDIR BINDIR SBINDIR LIBEXECDIR PACKAGE
 
 CFLAGS   = -Wall -ggdb
 
 PLUGINS = \
-   setns.so
+   task_setns.so
 
 LIBRARIES =
 SUBDIRS =
@@ -48,6 +49,8 @@ install:
 	@for d in $(SUBDIRS); do \
 	   make -C $$d DESTDIR=$(DESTDIR) install; \
 	 done
+	@mkdir -p --mode=0755 $(DESTDIR)$(PLUGSTACKDIR)
+	@install -m0644 plugstack.conf $(DESTDIR)$(PLUGINDIR)/setns.conf;
 
 subdirs-clean:
 	@for d in $(SUBDIRS); do make -C $$d clean; done
