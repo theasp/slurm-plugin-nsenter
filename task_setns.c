@@ -72,14 +72,6 @@
  *
  */
 
-#define ENV_NS_CGROUP "SLURM_NS_CGROUP"
-#define ENV_NS_IPC    "SLURM_NS_IPC"
-#define ENV_NS_NET    "SLURM_NS_NET"
-#define ENV_NS_MNT    "SLURM_NS_MNT"
-#define ENV_NS_PID    "SLURM_NS_PID"
-#define ENV_NS_USER   "SLURM_NS_USER"
-#define ENV_NS_UTS    "SLURM_NS_UTS"
-
 SPANK_PLUGIN(task_setns, 1);
 
 #define PLUGIN_NAME "task_setns"
@@ -104,14 +96,14 @@ int _setns_path(char *path, int nstype) {
 int _setns_dir_entry(char *dir, int nstype, char *nstype_name) {
   char path[PATH_MAX];
   struct stat buffer;
-  
+
   snprintf(path, PATH_MAX, "%s/%s", dir, nstype_name);
 
   if (stat(path, &buffer) != 0) {
-    slurm_debug("%s: Skipping %s: %s", PLUGIN_NAME, path, strerror(errno));
-    return 0;
+    slurm_error("%s: Unable to use %s from %s: %s", PLUGIN_NAME, nstype_name, path, strerror(errno));
+    return -1;
   } else {
-    slurm_debug("%s: Using %s", PLUGIN_NAME, path);
+    slurm_debug("%s: Using %s from %s", PLUGIN_NAME, nstype_name, path);
     return _setns_path(path, nstype);
   }
 }
@@ -123,10 +115,10 @@ int _setns_dir(char* dir) {
 
   errs += _setns_dir_entry(dir, CLONE_NEWCGROUP, "cgroup");
   errs += _setns_dir_entry(dir, CLONE_NEWIPC, "ipc");
-  errs += _setns_dir_entry(dir, CLONE_NEWNS, "mnt");
-  errs += _setns_dir_entry(dir, CLONE_NEWPID, "pid");
-  errs += _setns_dir_entry(dir, CLONE_NEWUSER, "user");
   errs += _setns_dir_entry(dir, CLONE_NEWUTS, "uts");
+  errs += _setns_dir_entry(dir, CLONE_NEWNET, "net");
+  errs += _setns_dir_entry(dir, CLONE_NEWPID, "pid");
+  errs += _setns_dir_entry(dir, CLONE_NEWNS, "mnt");
 
   if (errs != 0) {
     slurm_error("%s: Unable to clone all namespaces in %s", PLUGIN_NAME, dir);
@@ -136,28 +128,33 @@ int _setns_dir(char* dir) {
   return 0;
 }
 
-int _setns(spank_t sp) {
+int _setns(spank_t sp, int required) {
   char dir[PATH_MAX];
   uint32_t job_id;
 
   if (spank_get_item(sp, S_JOB_ID, &job_id) != ESPANK_SUCCESS) {
-    slurm_error("%s: Unable to clone all namespaces in %s", PLUGIN_NAME, dir);
+    slurm_error("%s: Unable to get job id", PLUGIN_NAME);
     return -1;
   }
 
   snprintf(dir, PATH_MAX, "%s/%d", "/var/run/slurm-llnl/task_setns", job_id);
-  return _setns_dir(dir);
-}
 
+  if (_setns_dir(dir) != 0 && required != 0)
+    return -1;
+
+  return 0;
+}
 
 int slurm_spank_task_init_privileged (spank_t sp, int ac, char *argv[]) {
   int result = 0;
 
-  slurm_debug("%s: slurm_spank_task_post_fork (enter)", PLUGIN_NAME);
+  slurm_debug("%s: slurm_spank_task_init_privileged (enter)", PLUGIN_NAME);
 
-  result=_setns(sp);
+  if (spank_remote(sp)) {
+    result=_setns(sp, 1);
+  }
 
-  slurm_debug("%s: slurm_spank_task_post_fork (leave)", PLUGIN_NAME);
+  slurm_debug("%s: slurm_spank_task_init_privileged (leave)", PLUGIN_NAME);
 
   return result;
 }
