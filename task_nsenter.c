@@ -73,10 +73,10 @@
  *
  */
 
-SPANK_PLUGIN(task_setns, 1);
+SPANK_PLUGIN(task_nsenter, 1);
 
-#define PLUGIN_NAME "task_setns"
-#define TASK_SETNS_DIR "/var/run/slurm-llnl/task_setns"
+#define PLUGIN_NAME "task_nsenter"
+#define TASK_NSENTER_DIR "/var/run/slurm-llnl/task_nsenter"
 
 static char cwd_path[PATH_MAX];
 static int init = 0;
@@ -132,6 +132,7 @@ int _open (int *fd, ino_t *ino, char *dir, char *sub) {
   return 0;
 }
 
+/* Taken from util-linux/nsenter.c */
 static void _continue_as_child (void) {
   pid_t child = fork();
   int status;
@@ -169,7 +170,7 @@ int _open_job (uint32_t job_id) {
   int errs = 0;
   char dir[PATH_MAX];
 
-  snprintf(dir, PATH_MAX, "%s/%d", TASK_SETNS_DIR, job_id);
+  snprintf(dir, PATH_MAX, "%s/%d", TASK_NSENTER_DIR, job_id);
 
   if (getcwd(cwd_path, sizeof(cwd_path)) == NULL) {
     slurm_error("%s: Unable to get current working directory: %s", PLUGIN_NAME, strerror(errno));
@@ -214,7 +215,7 @@ int _setns (int nstype, char *nstype_name, int fd, ino_t ino) {
   return 0;
 }
 
-int _setns_all () {
+int _nsenter () {
   int errs = 0;
   int user_err = 0;
 
@@ -270,11 +271,10 @@ int _chroot () {
     slurm_debug("%s: Successfully changed root", PLUGIN_NAME);
   }
 
-
   return 0;
 }
 
-int _cwd () {
+int _chdir () {
   if (chdir(cwd_path) != 0) {
     slurm_error("%s: Unable to change working directory to %s: %s", PLUGIN_NAME, cwd_path, strerror(errno));
     return -1;
@@ -358,7 +358,7 @@ int slurm_spank_task_init(spank_t sp, int ac, char *argv[]) {
   slurm_debug("%s: slurm_spank_task_init (enter)", PLUGIN_NAME);
 
   if (spank_remote(sp)) {
-    if (_setns_all() != 0) {
+    if (_nsenter() != 0) {
       _close_all();
       return -1;
     }
@@ -370,7 +370,7 @@ int slurm_spank_task_init(spank_t sp, int ac, char *argv[]) {
 
     _close_all();
 
-    if (_cwd() != 0)
+    if (_chdir() != 0)
       return -1;
 
     _continue_as_child();

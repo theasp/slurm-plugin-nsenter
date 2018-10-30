@@ -1,4 +1,4 @@
-PACKAGE    ?= slurm-plugin-setns
+PACKAGE    ?= slurm-plugin-task-nsenter
 
 sysconfdir ?= /etc/slurm-llnl
 
@@ -16,7 +16,7 @@ export LIBNAME LIBDIR BINDIR SBINDIR LIBEXECDIR PACKAGE
 CFLAGS   = -Wall -ggdb
 
 PLUGINS = \
-   task_setns.so
+   task_nsenter.so
 
 LIBRARIES =
 SUBDIRS =
@@ -50,7 +50,7 @@ install:
 	   make -C $$d DESTDIR=$(DESTDIR) install; \
 	 done
 	@mkdir -p --mode=0755 $(DESTDIR)$(PLUGSTACKDIR)
-	@install -m0644 plugstack.conf $(DESTDIR)$(PLUGINDIR)/setns.conf;
+	@install -m0644 plugstack.conf $(DESTDIR)$(PLUGINDIR)/task_nsenter.conf;
 
 subdirs-clean:
 	@for d in $(SUBDIRS); do make -C $$d clean; done
