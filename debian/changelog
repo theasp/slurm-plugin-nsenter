@@ -1,0 +1,5 @@
+slurm-plugin-nsenter (0.1-1) unstable; urgency=medium
+
+  * Initial release
+
+ -- Andrew Phillips <theasp@gmail.com>  Tue, 30 Oct 2018 10:31:37 -0300
