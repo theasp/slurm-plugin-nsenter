@@ -50,7 +50,7 @@ install:
 	   make -C $$d DESTDIR=$(DESTDIR) install; \
 	 done
 	@mkdir -p --mode=0755 $(DESTDIR)$(PLUGSTACKDIR)
-	@install -m0644 plugstack.conf $(DESTDIR)$(PLUGINDIR)/task_nsenter.conf;
+	@install -m0644 plugstack.conf $(DESTDIR)$(PLUGSTACKDIR)/task_nsenter.conf;
 
 subdirs-clean:
 	@for d in $(SUBDIRS); do make -C $$d clean; done
