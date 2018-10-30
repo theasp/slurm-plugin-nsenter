@@ -81,7 +81,9 @@ SPANK_PLUGIN(task_nsenter, 1);
 static char cwd_path[PATH_MAX];
 static int init = 0;
 static int root_fd = 0;
+#ifdef CLONE_NEWCGROUP
 static int cgroup_fd = 0;
+#endif
 static int ipc_fd = 0;
 static int uts_fd = 0;
 static int net_fd = 0;
@@ -90,7 +92,9 @@ static int mnt_fd = 0;
 static int user_fd = 0;
 
 static ino_t root_ino = 0;
+#ifdef CLONE_NEWCGROUP
 static ino_t cgroup_ino = 0;
+#endif
 static ino_t ipc_ino = 0;
 static ino_t uts_ino = 0;
 static ino_t net_ino = 0;
@@ -178,7 +182,9 @@ int _open_job (uint32_t job_id) {
   }
 
   errs += _open(&root_fd, &root_ino, dir, "root");
+#ifdef CLONE_NEWCGROUP
   errs += _open(&cgroup_fd, &cgroup_ino, dir, "ns/cgroup");
+#endif
   errs += _open(&ipc_fd, &ipc_ino, dir, "ns/ipc");
   errs += _open(&uts_fd, &uts_ino, dir, "ns/uts");
   errs += _open(&net_fd, &net_ino, dir, "ns/net");
@@ -225,7 +231,9 @@ int _nsenter () {
   }
 
   user_err = _setns(CLONE_NEWUSER, "user", user_fd, user_ino);
+#ifdef CLONE_NEWCGROUP
   errs += _setns(CLONE_NEWCGROUP, "cgroup", cgroup_fd, cgroup_ino);
+#endif
   errs += _setns(CLONE_NEWIPC, "ipc", ipc_fd, ipc_ino);
   errs += _setns(CLONE_NEWUTS, "uts", uts_fd, uts_ino);
   errs += _setns(CLONE_NEWNET, "net", net_fd, net_ino);
@@ -292,10 +300,12 @@ int _close_all () {
     root_fd = 0;
   }
 
+#ifdef CLONE_NEWCGROUP
   if (cgroup_fd > 0) {
     close(cgroup_fd);
     cgroup_fd = 0;
   }
+#endif
 
   if (ipc_fd > 0) {
     close(ipc_fd);
