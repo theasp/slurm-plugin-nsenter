@@ -357,17 +357,7 @@ int slurm_spank_task_init_privileged(spank_t sp, int ac, char *argv[]) {
       _close_all();
       return -1;
     }
-  }
 
-  slurm_debug("%s: slurm_spank_task_init_privileged (leave)", PLUGIN_NAME);
-
-  return 0;
-}
-
-int slurm_spank_task_init(spank_t sp, int ac, char *argv[]) {
-  slurm_debug("%s: slurm_spank_task_init (enter)", PLUGIN_NAME);
-
-  if (spank_remote(sp)) {
     if (_nsenter() != 0) {
       _close_all();
       return -1;
@@ -379,7 +369,17 @@ int slurm_spank_task_init(spank_t sp, int ac, char *argv[]) {
     }
 
     _close_all();
+  }
 
+  slurm_debug("%s: slurm_spank_task_init_privileged (leave)", PLUGIN_NAME);
+
+  return 0;
+}
+
+int slurm_spank_task_init(spank_t sp, int ac, char *argv[]) {
+  slurm_debug("%s: slurm_spank_task_init (enter)", PLUGIN_NAME);
+
+  if (spank_remote(sp)) {
     if (_chdir() != 0)
       return -1;
 
