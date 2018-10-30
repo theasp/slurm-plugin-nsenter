@@ -9,7 +9,7 @@ BINDIR     ?= /usr/bin
 SBINDIR    ?= /sbin
 LIBEXECDIR ?= /usr/libexec
 PLUGINDIR  ?= $(LIBDIR)/slurm-wlm
-PLUGSTACKDIR ?= $(sysconfdir)/plugstack.d
+PLUGSTACKDIR ?= $(sysconfdir)/plugstack.conf.d
 
 export LIBNAME LIBDIR BINDIR SBINDIR LIBEXECDIR PACKAGE
 
