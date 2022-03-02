@@ -20,7 +20,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <dirent.h>
-
+#include <signal.h>
 
 /*  SPANK plugin operations. SPANK plugin should have at least one of
  *   these functions defined non-NULL.
@@ -102,6 +102,8 @@ static ino_t pid_ino = 0;
 static ino_t mnt_ino = 0;
 static ino_t user_ino = 0;
 
+static pid_t child = -1;
+
 static int _get_ino(const char *path, ino_t *ino) {
   struct stat st;
 
@@ -136,12 +138,25 @@ int _open (int *fd, ino_t *ino, char *dir, char *sub) {
   return 0;
 }
 
+static void _forward_signal (int signum) {
+  if (child > 0) {
+    slurm_debug("%s: Forwarding signal %d to child pid %d", PLUGIN_NAME, signum, child);
+    kill(child, signum);
+  }
+}
+
 /* Taken from util-linux/nsenter.c */
 static void _continue_as_child (void) {
-  pid_t child = fork();
   int status;
   pid_t ret;
+  int signum;
 
+  slurm_debug("%s: Setting up signal forwarding", PLUGIN_NAME);
+  for (signum = 0; signum < NSIG; signum++)
+    if (signum != SIGCHLD)
+      signal(signum, _forward_signal);
+
+  child = fork();
   if (child < 0) {
     slurm_error("%s: Fork failed: %s", PLUGIN_NAME, strerror(errno));
     return;
